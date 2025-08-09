@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { getFirestore, collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { app } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { Eye, EyeOff, LogOut } from "lucide-react";
 
 const db = getFirestore(app);
 
@@ -20,6 +20,7 @@ export default function Home() {
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   
   useEffect(() => {
     if (!loading && !user) {
@@ -87,13 +88,17 @@ export default function Home() {
         <div className="max-w-6xl mx-auto grid gap-8 grid-cols-1 lg:grid-cols-3">
           <div className="lg:col-span-1 flex flex-col gap-8">
             <Card className="shadow-lg">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="font-headline">Total Balance</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setIsBalanceVisible(!isBalanceVisible)}>
+                  {isBalanceVisible ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+                </Button>
               </CardHeader>
               <CardContent>
                 <p className={cn(
                   "text-3xl font-bold",
-                  totalBalance >= 0 ? "text-success" : "text-destructive"
+                  totalBalance >= 0 ? "text-success" : "text-destructive",
+                  !isBalanceVisible && "blur-md"
                 )}>
                   {formatCurrency(totalBalance)}
                 </p>

@@ -6,6 +6,7 @@ import type { Transaction } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TransactionForm } from "@/components/transaction-form";
 import { TransactionsTable } from "@/components/transactions-table";
+import { cn } from "@/lib/utils";
 
 const initialTransactions: Transaction[] = [
   {
@@ -51,6 +52,24 @@ export default function Home() {
     setTransactions((prev) => [newTransaction, ...prev]);
   };
 
+  const totalBalance = React.useMemo(() => {
+    return transactions.reduce((acc, transaction) => {
+      if (transaction.type === "Income") {
+        return acc + transaction.amount;
+      } else if (transaction.type === "Expense") {
+        return acc - transaction.amount;
+      }
+      return acc;
+    }, 0);
+  }, [transactions]);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-background font-body">
       <header className="bg-primary text-primary-foreground p-4 shadow-md sticky top-0 z-10">
@@ -60,7 +79,20 @@ export default function Home() {
       </header>
       <main className="flex-grow p-4 md:p-8">
         <div className="max-w-6xl mx-auto grid gap-8 grid-cols-1 lg:grid-cols-3">
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 flex flex-col gap-8">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="font-headline">Total Balance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className={cn(
+                  "text-3xl font-bold",
+                  totalBalance >= 0 ? "text-success" : "text-destructive"
+                )}>
+                  {formatCurrency(totalBalance)}
+                </p>
+              </CardContent>
+            </Card>
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="font-headline">Add New Transaction</CardTitle>

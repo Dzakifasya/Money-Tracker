@@ -34,6 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { createTransactionAction } from "@/app/actions";
 import { transactionSchema, type TransactionFormValues, type Transaction } from "@/types";
+import { useAuth } from "@/hooks/use-auth";
 
 interface TransactionFormProps {
   onTransactionAdded: (transaction: Transaction) => void;
@@ -42,6 +43,7 @@ interface TransactionFormProps {
 export function TransactionForm({ onTransactionAdded }: TransactionFormProps) {
   const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -54,8 +56,17 @@ export function TransactionForm({ onTransactionAdded }: TransactionFormProps) {
   });
 
   function onSubmit(values: TransactionFormValues) {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to add a transaction.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     startTransition(async () => {
-      const { data, error } = await createTransactionAction(values);
+      const { data, error } = await createTransactionAction(values, user.uid);
 
       if (error) {
         toast({
@@ -177,7 +188,7 @@ export function TransactionForm({ onTransactionAdded }: TransactionFormProps) {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isPending}>
+        <Button type="submit" className="w-full" disabled={isPending || !user}>
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Save Transaction
         </Button>

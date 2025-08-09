@@ -1,56 +1,54 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Transaction } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TransactionForm } from "@/components/transaction-form";
 import { TransactionsTable } from "@/components/transactions-table";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
+import { getFirestore, collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { app } from "@/lib/firebase";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
-const initialTransactions: Transaction[] = [
-  {
-    id: "1",
-    type: "Income",
-    amount: 5000,
-    date: new Date("2024-07-15"),
-    description: "Monthly Salary",
-    category: "Income",
-  },
-  {
-    id: "2",
-    type: "Expense",
-    amount: 75.5,
-    date: new Date("2024-07-16"),
-    description: "Grocery Shopping at SuperMart",
-    category: "Expense",
-  },
-  {
-    id: "3",
-    type: "Expense",
-    amount: 1200,
-    date: new Date("2024-07-01"),
-    description: "Apartment Rent",
-    category: "Expense",
-  },
-  {
-    id: "4",
-    type: "Investment",
-    amount: 300,
-    date: new Date("2024-07-10"),
-    description: "Stocks purchase",
-    category: "Investment",
-  },
-];
-
+const db = getFirestore(app);
 
 export default function Home() {
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(initialTransactions);
-
-  const handleTransactionAdded = (newTransaction: Transaction) => {
-    setTransactions((prev) => [newTransaction, ...prev]);
-  };
+  const { user, loading, signOut } = useAuth();
+  const router = useRouter();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
+  
+  useEffect(() => {
+    if (user) {
+      const q = query(collection(db, "users", user.uid, "transactions"), orderBy("date", "desc"));
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const transactionsData: Transaction[] = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          transactionsData.push({ 
+            id: doc.id,
+            ...data,
+            date: data.date.toDate() 
+          } as Transaction);
+        });
+        setTransactions(transactionsData);
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
+  
+  if (loading || !user) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
 
   const totalBalance = React.useMemo(() => {
     return transactions.reduce((acc, transaction) => {
@@ -69,12 +67,20 @@ export default function Home() {
       currency: "USD",
     }).format(amount);
   };
+  
+  const handleTransactionAdded = (newTransaction: Transaction) => {
+    // Firestore real-time listener will handle updates
+  };
+
 
   return (
     <div className="flex flex-col min-h-screen bg-background font-body">
       <header className="bg-primary text-primary-foreground p-4 shadow-md sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold font-headline">Money Tracker</h1>
+          <Button variant="ghost" size="icon" onClick={signOut}>
+            <LogOut className="h-5 w-5" />
+          </Button>
         </div>
       </header>
       <main className="flex-grow p-4 md:p-8">

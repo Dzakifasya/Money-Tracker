@@ -96,11 +96,11 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className={cn(
-                  "text-3xl font-bold",
+                  "text-3xl font-bold transition-all",
                   totalBalance >= 0 ? "text-success" : "text-destructive",
                   !isBalanceVisible && "blur-md"
                 )}>
-                  {formatCurrency(totalBalance)}
+                  {isBalanceVisible ? formatCurrency(totalBalance) : '********'}
                 </p>
               </CardContent>
             </Card>

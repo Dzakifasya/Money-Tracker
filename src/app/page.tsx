@@ -46,10 +46,6 @@ export default function Home() {
       return () => unsubscribe();
     }
   }, [user]);
-  
-  if (loading || !user) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
-  }
 
   const totalBalance = React.useMemo(() => {
     return transactions.reduce((acc, transaction) => {
@@ -61,6 +57,10 @@ export default function Home() {
       return acc;
     }, 0);
   }, [transactions]);
+  
+  if (loading || !user) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
